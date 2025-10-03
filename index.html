@@ -1,128 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Daily Affirmation � Free</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Affirmations</title>
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#f3f6fb;color:#0b1220;display:flex;align-items:center;justify-content:center;height:100vh}
-    .card{width:min(760px,96%);background:#fff;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(11,18,32,0.08)}
-    h1{margin:0 0 10px;font-size:20px}
-    .affirm{font-size:28px;line-height:1.3;margin:18px 0;padding:16px;border-radius:12px;background:linear-gradient(90deg,#f7fbff,#ffffff);min-height:90px;display:flex;align-items:center;justify-content:center;text-align:center}
-    .controls{display:flex;gap:10px;flex-wrap:wrap}
-    button,select{padding:10px 14px;border-radius:10px;border:1px solid #e0e6ef;background:#fff;cursor:pointer}
-    .muted{color:#536079;font-size:13px}
-    .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+      color: #333;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #affirmation {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      background: white;
+      max-width: 500px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      margin: 10px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #6a11cb;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #2575fc;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="top">
-      <h1>Daily Affirmation Generator</h1>
-      <div class="muted">Free � No signup required</div>
-    </div>
-
-    <div style="margin-top:12px">
-      <label class="muted">Category</label>
-      <div style="margin:8px 0" class="controls">
-        <select id="category">
-          <option value="">All</option>
-        </select>
-        <button id="generate">Generate ?</button>
-        <button id="copy">Copy</button>
-        <button id="download">Download Image</button>
-      </div>
-    </div>
-
-    <div id="affirmation" class="affirm">Click **Generate** to get your affirmation</div>
-
-    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
-      <div class="muted">Tip: share this with a friend ??</div>
-      <div>
-        <a id="mailto" href="#" style="text-decoration:none;padding:8px 12px;border-radius:10px;border:1px solid #e0e6ef">Share by email</a>
-      </div>
-    </div>
-    <div style="margin-top:12px" class="muted">Pro tip: Collect emails using a Google Form (paste the form link here) to send daily affirmations.</div>
+  <h1>✨ Daily Affirmation Generator ✨</h1>
+  <div id="affirmation">Click the button to see your affirmation!</div>
+  
+  <div class="buttons">
+    <button onclick="newAffirmation()">Generate ✨</button>
+    <button onclick="copyAffirmation()">Copy 📋</button>
+    <button onclick="downloadAffirmation()">Download 📥</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Canvas used for creating images -->
+  <canvas id="canvas" style="display:none;"></canvas>
+
   <script>
-    // ========== REPLACE this with the CSV URL you got from "Publish to web" ==========
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9oEQHgYMZn5Q8RWEI_PNGrg_oTLDydtWBXPuI2quJhO4tp_ZjkHed69HEaBulvtna7sCC_nCFOsqZ/pubhtml?gid=0&single=true";
-    // ================================================================================
+    const affirmations = [
+      "I am confident and capable.",
+      "I attract positivity into my life.",
+      "I am worthy of love and success.",
+      "I choose happiness every day.",
+      "I believe in my dreams and goals.",
+      "I am grateful for this moment.",
+      "I radiate peace and kindness.",
+      "I trust the journey of my life.",
+      "I am becoming the best version of myself."
+    ];
 
-    let data = []; // loaded affirmations
-    const catSelect = document.getElementById('category');
-    const generateBtn = document.getElementById('generate');
-    const affirmDiv = document.getElementById('affirmation');
-    const copyBtn = document.getElementById('copy');
-    const downloadBtn = document.getElementById('download');
-    const mailto = document.getElementById('mailto');
+    function newAffirmation() {
+      const randomIndex = Math.floor(Math.random() * affirmations.length);
+      document.getElementById("affirmation").innerText = affirmations[randomIndex];
+    }
 
-    function populateCategories() {
-      const cats = Array.from(new Set(data.map(r => (r.Category||'').trim()).filter(Boolean))).sort();
-      cats.forEach(c => {
-        const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
-        catSelect.appendChild(opt);
+    function copyAffirmation() {
+      const text = document.getElementById("affirmation").innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Affirmation copied to clipboard! ✅");
       });
     }
 
-    function pickRandom(category) {
-      let pool = data;
-      if (category) pool = data.filter(d => (d.Category||'').trim().toLowerCase() === category.toLowerCase());
-      if (!pool || pool.length===0) return null;
-      const idx = Math.floor(Math.random() * pool.length);
-      return pool[idx].Affirmation || pool[idx].Affirm || pool[idx]['affirmation'] || '';
+    function downloadAffirmation() {
+      const text = document.getElementById("affirmation").innerText;
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = 600;
+      canvas.height = 300;
+
+      // Background
+      const gradient = ctx.createLinearGradient(0, 0, 600, 300);
+      gradient.addColorStop(0, "#a18cd1");
+      gradient.addColorStop(1, "#fbc2eb");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Text
+      ctx.fillStyle = "white";
+      ctx.font = "20px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      wrapText(ctx, text, canvas.width/2, canvas.height/2, 500, 30);
+
+      const link = document.createElement("a");
+      link.download = "affirmation.png";
+      link.href = canvas.toDataURL();
+      link.click();
     }
 
-    function showAffirm(text) {
-      affirmDiv.textContent = text || 'No affirmation available';
-      mailto.href = 'mailto:?subject=An affirmation for you&body=' + encodeURIComponent(text);
-    }
-
-    generateBtn.addEventListener('click', () => {
-      const cat = catSelect.value;
-      const txt = pickRandom(cat);
-      if (!txt) { showAffirm('No affirmations found for that category.'); return; }
-      showAffirm(txt);
-    });
-
-    copyBtn.addEventListener('click', async () => {
-      const txt = affirmDiv.textContent;
-      try {
-        await navigator.clipboard.writeText(txt);
-        copyBtn.textContent = 'Copied ?';
-        setTimeout(()=>copyBtn.textContent='Copy',1200);
-      } catch(e){ alert('Copy failed: '+e); }
-    });
-
-    downloadBtn.addEventListener('click', () => {
-      html2canvas(affirmDiv, {scale:2}).then(canvas=>{
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = 'affirmation.png';
-        a.click();
-      });
-    });
-
-    // Load CSV using PapaParse
-    Papa.parse(CSV_URL, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        data = results.data;
-        if (!data || data.length===0) {
-          showAffirm('No data found in the sheet. Check CSV URL.');
-          return;
+    // Helper function to wrap text
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(" ");
+      let line = "";
+      let lines = [];
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          lines.push(line);
+          line = words[n] + " ";
+        } else {
+          line = testLine;
         }
-        populateCategories();
-      },
-      error: function(err) {
-        showAffirm('Failed to load affirmations: ' + err);
       }
-    });
+      lines.push(line);
+      const totalHeight = lines.length * lineHeight;
+      let offsetY = y - totalHeight / 2;
+      lines.forEach((l, i) => {
+        ctx.fillText(l, x, offsetY + (i * lineHeight));
+      });
+    }
   </script>
 </body>
 </html>
